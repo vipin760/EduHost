@@ -2,8 +2,62 @@ import { Location } from "../models/location.model.js";
 
 export default async function locationRoutes(fastify) {
   // Get all locations
-  fastify.get("/", async () => {
-    return await Location.find();
+ fastify.get("/", async (request, reply) => {
+    try {
+      const {
+        search = "",       // for name or location search
+        page = 1,
+        limit = 10,
+        sort_by = "createdAt",
+        sort_order = "desc",
+        baseUrl,           // optional filter
+        location           // optional filter
+      } = request.query;
+
+      // 🧠 Build dynamic filter
+      const filter = {};
+
+      if (search) {
+        filter.$or = [
+          { name: { $regex: search, $options: "i" } },
+          { location: { $regex: search, $options: "i" } },
+          { baseUrl: { $regex: search, $options: "i" } }
+        ];
+      }
+
+      if (baseUrl) filter.baseUrl = baseUrl;
+      if (location) filter.location = location;
+
+      // ⚙️ Sorting
+      const sortOptions = { [sort_by]: sort_order === "asc" ? 1 : -1 };
+
+      // 🔢 Pagination
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const total = await Location.countDocuments(filter);
+      const locations = await Location.find(filter)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(parseInt(limit));
+
+      return reply.code(200).send({
+        status: true,
+        message: "Locations fetched successfully",
+        data: locations,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / limit)
+        }
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({
+        status: false,
+        message: "Failed to fetch locations",
+        error: error.message
+      });
+    }
   });
 
   // Add location
