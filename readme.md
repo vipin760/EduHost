@@ -1,5 +1,7 @@
 school-location-server/
 │
+├── .env                        
+│
 ├── src/
 │   ├── models/
 │   │   └── location.model.js
