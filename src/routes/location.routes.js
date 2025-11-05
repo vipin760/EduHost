@@ -80,4 +80,10 @@ export default async function locationRoutes(fastify) {
     await Location.findByIdAndDelete(req.params.id);
     reply.send({ message: "Location deleted successfully" });
   });
+
+   // Delete location
+  fastify.get("/:id", async (req, reply) => {
+    const locationData = await Location.findById(req.params.id);
+    reply.code(200).send({status:true,data:locationData, message: "Location deleted successfully" });
+  });
 }
