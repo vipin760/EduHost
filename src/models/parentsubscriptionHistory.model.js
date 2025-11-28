@@ -1,3 +1,5 @@
+const { default: mongoose } = require("mongoose");
+
 const ParentSubscriptionHistorySchema = new mongoose.Schema(
   {
     student_id: {
@@ -6,8 +8,7 @@ const ParentSubscriptionHistorySchema = new mongoose.Schema(
     },
 
     school_id: {
-      type: String,
-      required: true
+      type: String
     },
 
     subscription_type: {

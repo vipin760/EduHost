@@ -4,6 +4,7 @@ import parentsubscriptionModel from "../models/parentsubscription.model.js";
 import { createOrder } from "../services/razorpay.service.js";
 import getExpiryDate from "../utils/getExpirydate.js";
 import crypto from 'crypto'
+import parentsubscriptionHistoryModel from "../models/parentsubscriptionHistory.model.js";
 
 export default async function paymentFunction1(fastify) {
     fastify.post('/create', async (request, reply) => {
@@ -90,7 +91,7 @@ export default async function paymentFunction1(fastify) {
             );
 
             // HISTORY INSERT
-            await ParentSubscriptionHistory.create({
+            await parentsubscriptionHistoryModel.create({
                 student_id: studentId,
                 location_id,
                 subscription_type,
@@ -120,13 +121,12 @@ export default async function paymentFunction1(fastify) {
             },
             { new: true }
         );
-
         // 3. INSERT HISTORY
-        await ParentSubscriptionHistory.create({
+        await parentsubscriptionHistoryModel.create({
             student_id: studentId,
-            location_id,
+            location_id:master.location_id,
             subscription_type,
-            amount,
+            amount:master.amount,
             payment_status: "SUCCESS",
             activated_at: today,
             expired_at: expire,
@@ -141,6 +141,7 @@ export default async function paymentFunction1(fastify) {
         });
 
     } catch (error) {
+        console.log("<><>error",error)
         return reply.code(500).send({
             status: false,
             message: "Internal Server Error",
