@@ -63,8 +63,6 @@ export default async function locationRoutes(fastify) {
     // Add location
     fastify.post("/", async (req, reply) => {
         try {
-            console.log("<><>req.body", req.body);
-
             const { name, location } = req.body;
 
             const existingLocation = await Location.findOne({
