@@ -8,16 +8,20 @@ import authFunction from "./routes/auth.route.js";
 
 export const buildApp = async () => {
   const fastify = Fastify({ logger: true });
-
+  await fastify.register(cors, {
+    origin: "*",     // allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  });
   // Connect Database
   await connectDB();
 
   // Register Routes
-  fastify.register(indexRoutes,{prefix:"/"});
-  fastify.register(locationRoutes,{prefix:"/api/location"});
-  fastify.register(paymentFunction,{ prefix:"/api/payment"})
-  fastify.register(subscriberFunction,{ prefix:"/api/subscribers"})
-  fastify.register(authFunction,{ prefix:"/api/login"})
+  fastify.register(indexRoutes, { prefix: "/" });
+  fastify.register(locationRoutes, { prefix: "/api/location" });
+  fastify.register(paymentFunction, { prefix: "/api/payment" })
+  fastify.register(subscriberFunction, { prefix: "/api/subscribers" })
+  fastify.register(authFunction, { prefix: "/api/login" })
 
   return fastify;
 };
