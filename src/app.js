@@ -10,7 +10,7 @@ export const buildApp = async () => {
   const fastify = Fastify({ logger: true });
   await fastify.register(cors, {
     origin: "*",     // allow all origins
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT","PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   });
   // Connect Database
