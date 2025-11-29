@@ -5,6 +5,7 @@ import indexRoutes from "./routes/index.routes.js";
 import paymentFunction from "./routes/payment.route.js";
 import subscriberFunction from "./routes/subscribers.route.js";
 import authFunction from "./routes/auth.route.js";
+import cors from "@fastify/cors"
 
 export const buildApp = async () => {
   const fastify = Fastify({ logger: true });
