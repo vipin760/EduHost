@@ -1,5 +1,26 @@
 import mongoose from "mongoose";
 
+const StudentSnapshotSchema = new mongoose.Schema(
+  {
+    _id: mongoose.Schema.Types.ObjectId,
+    registration_number: String,
+    student_name: String,
+    mother_name: String,
+    father_name: String,
+    contact_number: String,
+    date_of_birth: Date,
+    gender: String,
+    nationality: String,
+    blood_group: String,
+    subscription: Boolean,
+    class_info: mongoose.Schema.Types.ObjectId,
+    location_id: mongoose.Schema.Types.ObjectId,
+    user_id: mongoose.Schema.Types.ObjectId
+  },
+  { _id: false }
+);
+
+
 const ParentSubscriptionSchema = new mongoose.Schema(
   {
     student_id: {
@@ -48,7 +69,8 @@ const ParentSubscriptionSchema = new mongoose.Schema(
     is_active: {
       type: Boolean,
       default: false
-    }
+    },
+    student_info:StudentSnapshotSchema
   },
   {
     timestamps: true

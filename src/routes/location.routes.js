@@ -63,7 +63,7 @@ export default async function locationRoutes(fastify) {
     // Add location
     fastify.post("/", async (req, reply) => {
         try {
-            const { name, location } = req.body;
+            const { name, location, amount } = req.body;
 
             const existingLocation = await Location.findOne({
                 name: { $regex: name, $options: "i" },
@@ -86,6 +86,7 @@ export default async function locationRoutes(fastify) {
     // Update location
     fastify.put("/:id", async (req, reply) => {
         try {
+            console.log("<><>working",req.body)
         const existingLocation = await Location.findOne({
             _id: { $ne: req.params.id },
             name: { $regex: req.body.name, $options: "i" },
@@ -97,7 +98,7 @@ export default async function locationRoutes(fastify) {
         const updated = await Location.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
         });
-        reply.send(updated);
+        reply.send({status:true,data:updated,message:"updated successfully"});
         } catch (error) {
             console.log("<><>error",error)
         }

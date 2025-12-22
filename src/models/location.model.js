@@ -4,7 +4,8 @@ const locationSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     baseUrl:{type:String},
-    location:{type:String}
+    location:{type:String},
+    amount:{type:Number}
   },
   { timestamps: true }
 );
