@@ -61,48 +61,117 @@ export default async function locationRoutes(fastify) {
     });
 
     // Add location
-    fastify.post("/", async (req, reply) => {
-        try {
-            const { name, location, amount } = req.body;
+   fastify.post("/", async (req, reply) => {
+  try {
+    const { externalId, schoolCode, name, location, baseUrl } = req.body;
+    // Basic validation
+    if (!externalId || !name || !location || !baseUrl) {
+      return reply.code(400).send({
+        status: false,
+        message: "Missing required fields"
+      });
+    }
 
-            const existingLocation = await Location.findOne({
-                name: { $regex: name, $options: "i" },
-                location: { $regex: location, $options: "i" },
-            });
-            if (existingLocation) {
-                return reply.code(400).send({
-                    status: false,
-                    message: `School '${name}' already exists`
-                });
-            }
-            const newLocation = new Location(req.body);
-            await newLocation.save();
-            reply.code(201).send(newLocation);
-        } catch (error) {
-            return reply(400).send({ statud: false, message: `Something went wrong (${error.message})` })
-        }
+    // Idempotency check (CRITICAL)
+    const existing = await Location.findOne({ externalId });
+    if (existing) {
+      // Same local server retrying → return existing
+      return reply.code(200).send(existing);
+    }
+
+    // Create new global location
+    const newLocation = await Location.create({
+      externalId,
+      schoolCode,
+      name: name.trim(),
+      location: location.trim(),
+      baseUrl
     });
+
+    return reply.code(201).send(newLocation);
+
+  } catch (error) {
+    // Handle duplicate schoolCode explicitly
+    if (error.code === 11000) {
+      return reply.code(409).send({
+        status: false,
+        message: "School code already exists"
+      });
+    }
+
+    return reply.code(500).send({
+      status: false,
+      message: error.message
+    });
+  }
+});
 
     // Update location
     fastify.put("/:id", async (req, reply) => {
-        try {
-            console.log("<><>working",req.body)
-        const existingLocation = await Location.findOne({
-            _id: { $ne: req.params.id },
-            name: { $regex: req.body.name, $options: "i" },
-            location: { $regex: req.body.location, $options: "i" },
-        });
-        if(existingLocation){
-            return reply.code(400).send({status:false,message:`Already existing school name ${req.body.name} with the same location ${req.body.location}`})
-        }
-        const updated = await Location.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-        });
-        reply.send({status:true,data:updated,message:"updated successfully"});
-        } catch (error) {
-            console.log("<><>error",error)
-        }
+  try {
+    const { id:externalId } = req.params;
+    const { name, location, baseUrl, amount } = req.body;
+
+    if (!name && !location && !baseUrl && amount === undefined) {
+      return reply.code(400).send({
+        status: false,
+        message: "Provide at least one field to update"
+      });
+    }
+
+    const updateData = {};
+    if (name) updateData.name = name.trim();
+    if (location) updateData.location = location.trim();
+    if (baseUrl) updateData.baseUrl = baseUrl.trim();
+    if (amount !== undefined) updateData.amount = amount;
+
+    const updated = await Location.findOneAndUpdate(
+      { externalId },          // 🔑 identity
+      { $set: updateData },
+      { new: true }
+    );
+    
+
+    if (!updated) {
+      return reply.code(404).send({
+        status: false,
+        message: "Location not found for this externalId"
+      });
+    }
+    
+
+    return reply.code(200).send({
+      status: true,
+      data: updated,
+      message: "Updated successfully"
     });
+
+  } catch (error) {
+    return reply.code(500).send({
+      status: false,
+      message: error.message
+    });
+  }
+});
+    // fastify.put("/:id", async (req, reply) => {
+    //     try {
+    //         console.log("<><>working",req.body)
+    //     const existingLocation = await Location.findOne({
+    //         _id: { $ne: req.params.id },
+    //         name: { $regex: req.body.name, $options: "i" },
+    //         location: { $regex: req.body.location, $options: "i" },
+    //     });
+    //     if(existingLocation){
+    //         return reply.code(400).send({status:false,message:`Already existing school name ${req.body.name} with the same location ${req.body.location}`})
+    //     }
+    //     const updated = await Location.findByIdAndUpdate(req.params.id, req.body, {
+    //         new: true,
+    //     });
+    //     reply.send({status:true,data:updated,message:"updated successfully"});
+    //     } catch (error) {
+    //         console.log("<><>error",error)
+    //     }
+    // });
 
     // Delete location
     fastify.delete("/:id", async (req, reply) => {
