@@ -107,46 +107,63 @@ export default async function locationRoutes(fastify) {
 });
 
     // Update location
-    fastify.put("/:id", async (req, reply) => {
+    fastify.put("/:externalId", async (req, reply) => {
   try {
-    const { id:externalId } = req.params;
-    const { name, location, baseUrl, amount } = req.body;
+    const { externalId } = req.params;
+    const { name, location, baseUrl, amount, schoolCode } = req.body;
 
-    if (!name && !location && !baseUrl && amount === undefined) {
+    if (!externalId) {
       return reply.code(400).send({
         status: false,
-        message: "Provide at least one field to update"
+        message: "externalId is required"
       });
     }
 
-    const updateData = {};
-    if (name) updateData.name = name.trim();
-    if (location) updateData.location = location.trim();
-    if (baseUrl) updateData.baseUrl = baseUrl.trim();
-    if (amount !== undefined) updateData.amount = amount;
-
-    const updated = await Location.findOneAndUpdate(
-      { externalId },          // 🔑 identity
-      { $set: updateData },
-      { new: true }
-    );
-    
-
-    if (!updated) {
-      return reply.code(404).send({
+    if (!name && !location && !baseUrl && amount === undefined && !schoolCode) {
+      return reply.code(400).send({
         status: false,
-        message: "Location not found for this externalId"
+        message: "Provide at least one field to update or create"
       });
     }
-    
+
+    // Build update object
+    const updateData = {
+      ...(name && { name: name.trim() }),
+      ...(location && { location: location.trim() }),
+      ...(baseUrl && { baseUrl: baseUrl.trim() }),
+      ...(schoolCode && { schoolCode: schoolCode.trim() }),
+      ...(amount !== undefined && { amount })
+    };
+
+    // 🔑 UPSERT: update if exists, create if not
+    const updated = await Location.findOneAndUpdate(
+      { externalId },               // identity
+      {
+        $set: updateData,
+        $setOnInsert: {
+          externalId // ensure stored on create
+        }
+      },
+      {
+        new: true,
+        upsert: true // THIS is the key
+      }
+    );
 
     return reply.code(200).send({
       status: true,
       data: updated,
-      message: "Updated successfully"
+      message: "Location upserted successfully"
     });
 
   } catch (error) {
+    if (error.code === 11000) {
+      return reply.code(409).send({
+        status: false,
+        message: "Duplicate schoolCode"
+      });
+    }
+
     return reply.code(500).send({
       status: false,
       message: error.message
